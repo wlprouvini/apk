@@ -1,0 +1,246 @@
+<html><head><base href="https://websim.creationengine.com/android-time-app/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tempus - Relógio e Organizador</title>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        font-family: 'Roboto', sans-serif;
+        background-color: #121212;
+        color: #ffffff;
+        height: 100%;
+        overflow: hidden;
+    }
+    .app-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    .header {
+        background-color: #1F1F1F;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+    .clock {
+        font-size: 48px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .date {
+        font-size: 18px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    .section {
+        background-color: #1F1F1F;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .section-title {
+        font-size: 20px;
+        margin-bottom: 10px;
+        color: #BB86FC;
+    }
+    .btn {
+        background-color: #ffffff;
+        color: #121212;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        font-size: 16px;
+        margin: 5px;
+        cursor: pointer;
+    }
+    .btn:active {
+        background-color: #CCCCCC;
+    }
+    #stopwatch, #timer {
+        font-size: 36px;
+        text-align: center;
+        margin: 10px 0;
+    }
+    #todo-list {
+        list-style-type: none;
+        padding: 0;
+    }
+    #todo-list li {
+        background-color: #2D2D2D;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    #new-todo {
+        width: calc(100% - 22px);
+        padding: 10px;
+        margin-bottom: 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #2D2D2D;
+        color: #ffffff;
+    }
+    .calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        text-align: center;
+    }
+    .calendar-header {
+        grid-column: span 7;
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #03DAC6;
+    }
+    .calendar-day {
+        padding: 5px;
+        background-color: #2D2D2D;
+        border-radius: 5px;
+    }
+    .today {
+        background-color: #BB86FC;
+        color: #121212;
+    }
+</style>
+</head>
+<body>
+<div class="app-container">
+    <div class="header">
+        <h1>Tempus</h1>
+    </div>
+    <div class="content">
+        <div class="clock" id="clock"></div>
+        <div class="date" id="date"></div>
+        
+        <div class="section">
+            <div class="section-title">Cronômetro</div>
+            <div id="stopwatch">00:00:00</div>
+            <button class="btn" id="start-stop">Iniciar</button>
+            <button class="btn" id="reset">Zerar</button>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Lista de Afazeres</div>
+            <input type="text" id="new-todo" placeholder="Adicionar nova tarefa">
+            <button class="btn" id="add-todo">Adicionar</button>
+            <ul id="todo-list"></ul>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Calendário</div>
+            <div class="calendar" id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Clock and Date
+    function updateClock() {
+        const now = new Date();
+        const clock = document.getElementById('clock');
+        const dateElement = document.getElementById('date');
+        
+        clock.textContent = now.toLocaleTimeString('pt-BR');
+        dateElement.textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Stopwatch
+    let stopwatchInterval;
+    let stopwatchRunning = false;
+    let stopwatchTime = 0;
+    
+    const stopwatch = document.getElementById('stopwatch');
+    const startStopBtn = document.getElementById('start-stop');
+    const resetBtn = document.getElementById('reset');
+    
+    function updateStopwatch() {
+        stopwatchTime++;
+        const hours = Math.floor(stopwatchTime / 3600);
+        const minutes = Math.floor((stopwatchTime % 3600) / 60);
+        const seconds = stopwatchTime % 60;
+        stopwatch.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+    
+    startStopBtn.addEventListener('click', () => {
+        if (stopwatchRunning) {
+            clearInterval(stopwatchInterval);
+            startStopBtn.textContent = 'Iniciar';
+        } else {
+            stopwatchInterval = setInterval(updateStopwatch, 1000);
+            startStopBtn.textContent = 'Parar';
+        }
+        stopwatchRunning = !stopwatchRunning;
+    });
+    
+    resetBtn.addEventListener('click', () => {
+        clearInterval(stopwatchInterval);
+        stopwatchTime = 0;
+        stopwatch.textContent = '00:00:00';
+        stopwatchRunning = false;
+        startStopBtn.textContent = 'Iniciar';
+    });
+
+    // Todo List
+    const todoList = document.getElementById('todo-list');
+    const newTodoInput = document.getElementById('new-todo');
+    const addTodoBtn = document.getElementById('add-todo');
+    
+    addTodoBtn.addEventListener('click', () => {
+        const todoText = newTodoInput.value.trim();
+        if (todoText) {
+            const li = document.createElement('li');
+            li.textContent = todoText;
+            todoList.appendChild(li);
+            newTodoInput.value = '';
+        }
+    });
+
+    // Calendar
+    function generateCalendar() {
+        const calendar = document.getElementById('calendar');
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        const lastDay = new Date(currentYear, currentMonth + 1, 0);
+        
+        calendar.innerHTML = `
+            <div class="calendar-header">${now.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</div>
+            <div class="calendar-day">Dom</div>
+            <div class="calendar-day">Seg</div>
+            <div class="calendar-day">Ter</div>
+            <div class="calendar-day">Qua</div>
+            <div class="calendar-day">Qui</div>
+            <div class="calendar-day">Sex</div>
+            <div class="calendar-day">Sáb</div>
+        `;
+        
+        for (let i = 0; i < firstDay.getDay(); i++) {
+            calendar.innerHTML += '<div></div>';
+        }
+        
+        for (let i = 1; i <= lastDay.getDate(); i++) {
+            const dayElement = document.createElement('div');
+            dayElement.classList.add('calendar-day');
+            dayElement.textContent = i;
+            if (i === now.getDate()) {
+                dayElement.classList.add('today');
+            }
+            calendar.appendChild(dayElement);
+        }
+    }
+    
+    generateCalendar();
+</script>
+</body>
+</html>
